@@ -1,9 +1,11 @@
 #!/usr/bin/env python3
 
 import psycopg2
+import sys
 
 """ Interact with 'news' postgres database and store results in a file """
 
+db_name = "news"
 
 # Question strings for output
 question_1 = "\n1. What are the most popular three articles of all time?\n"
@@ -50,8 +52,24 @@ sql_query_3 = """
     WHERE errors_percentage > 1;
 """
 
-# Connect with news postgres database
-db = psycopg2.connect("dbname=news user=vagrant")
+
+def connect(database_name):
+    """Connect to the PostgreSQL database.  Returns a database connection."""
+    try:
+        db = psycopg2.connect("dbname={}".format(database_name))
+        c = db.cursor()
+        print("Database connection created\n")
+        return db, c
+    except psycopg2.Error as e:
+        print("Unable to connect to database")
+        # THEN perhaps exit the program
+        sys.exit(1) # The easier method
+        # OR perhaps throw an error
+        # raise e
+        # If you choose to raise an exception,
+        # It will need to be caught by the whoever called this function
+
+db, c = connect(db_name)
 
 
 def create_view(sql_statement):
@@ -101,33 +119,34 @@ def create_output_string(result_list):
 
     return output
 
+if __name__ == "__main__" :
 
-print("Querying database...\n")
+    print("Querying database...\n")
 
-# Create views
-create_view(sql_article_ranking_view)
-create_view(sql_daily_errors_view)
+    # Create views
+    create_view(sql_article_ranking_view)
+    create_view(sql_daily_errors_view)
 
-# Execute queries
-articles_list = query(sql_query_1)
-authors_list = query(sql_query_2)
-errors_report = query(sql_query_3)
+    # Execute queries
+    articles_list = query(sql_query_1)
+    authors_list = query(sql_query_2)
+    errors_report = query(sql_query_3)
 
-db.close()
+    db.close()
 
-print("Writing results on file...\n")
+    print("Writing results on file...\n")
 
-# Write all the results in output.txt
-with open("output.txt", "w") as file:
-    file.write("LOGS ANALYSIS PROJECT OUTPUT FILE\n")
-    file.write("-" * 33 + "\n")
-    file.write(question_1.upper())
-    file.write(create_output_string(articles_list))
-    file.write(question_2.upper())
-    file.write(create_output_string(authors_list))
-    file.write(question_3.upper())
-    file.write(create_output_string(errors_report))
-    file.close()
+    # Write all the results in output.txt
+    with open("output.txt", "w") as file:
+        file.write("LOGS ANALYSIS PROJECT OUTPUT FILE\n")
+        file.write("-" * 33 + "\n")
+        file.write(question_1.upper())
+        file.write(create_output_string(articles_list))
+        file.write(question_2.upper())
+        file.write(create_output_string(authors_list))
+        file.write(question_3.upper())
+        file.write(create_output_string(errors_report))
+        file.close()
 
-print("Done! In the same folder of log_analysis.py you will find output.txt, "
-      "open it to see the results.")
+    print("Done! In the same folder of log_analysis.py you will find output.txt, "
+          "open it to see the results.")
